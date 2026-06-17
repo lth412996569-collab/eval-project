@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#1a56db">
+<meta name="apple-mobile-web-app-title" content="评估管理">
+<meta name="theme-color" content="#1a56db">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>评估部项目管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f7fa;color:#333;font-size:14px}
+.page{display:none;padding:16px;min-height:100vh}
+.page.active{display:block}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.title{font-size:20px;font-weight:700;color:#1a1a2e}.sub{font-size:12px;color:#999}
+.logout{font-size:12px;color:#dc2626;cursor:pointer}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-title{font-size:15px;font-weight:600;color:#1a1a2e;margin-bottom:12px;display:block}
+.stat-grid{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.stat-item{flex:1;min-width:70px;background:#fff;border-radius:12px;padding:16px 12px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer}
+.stat-num{font-size:28px;font-weight:700;color:#1a56db;display:block}
+.stat-label{font-size:12px;color:#666;margin-top:4px}
+.stat-item.green .stat-num{color:#047857}.stat-item.orange .stat-num{color:#b45309}.stat-item.red .stat-num{color:#dc2626}
+.fin-bar-wrap{margin-bottom:12px;cursor:pointer}
+.fin-bar-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.fin-label{font-size:13px;color:#666}.fin-val{font-size:14px;font-weight:700}
+.fin-val.green{color:#047857}.fin-val.orange{color:#c2410c}.fin-val.blue{color:#1a56db}
+.fin-bar-bg{height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;display:flex;gap:1px}
+.fin-bar-fill{height:100%;border-radius:3px}.fin-bar-fill.blue{background:#1a56db;width:100%}
+.fin-sub-row{display:flex;justify-content:space-between;margin-top:3px}
+.fin-sub{font-size:11px;color:#999}
+.fin-footer{display:flex;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid #f0f0f0}
+.fin-tag{font-size:12px;padding:3px 10px;border-radius:4px}
+.fin-tag.signed{background:#ecfdf5;color:#047857}.fin-tag.unsigned{background:#fef2f2;color:#dc2626}
+.filter-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.filter-tag{padding:6px 14px;border-radius:20px;font-size:13px;background:#fff;color:#666;border:1px solid #e5e7eb;cursor:pointer}
+.filter-tag.active{background:#1a56db;color:#fff;border-color:#1a56db}
+.search-input{width:100%;padding:10px 16px;background:#fff;border-radius:8px;font-size:14px;border:1px solid #e5e7eb;margin-bottom:10px}
+.proj-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer}
+.proj-card.legacy{border-left:3px solid #dc2626;background:#fffbfb}
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.pc-name{font-size:15px;font-weight:600;flex:1;line-height:1.4}
+.pc-badge{padding:2px 8px;border-radius:4px;font-size:11px;white-space:nowrap;margin-left:8px}
+.badge-completed{background:#d1fae5;color:#047857}.badge-inProgress{background:#fef3c7;color:#b45309}
+.badge-pending{background:#e5e7eb;color:#666}.badge-legacy{background:#fee2e2;color:#dc2626}
+.pc-mid{display:flex;justify-content:space-between;margin-bottom:8px}
+.pc-client{font-size:13px;color:#666}.pc-amount{font-size:16px;font-weight:700;color:#1a56db}
+.pc-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.pc-tag{font-size:11px;padding:2px 8px;border-radius:4px}
+.pc-tag.group{background:#eff6ff;color:#1a56db}.pc-tag.signed{background:#ecfdf5;color:#047857}
+.pc-tag.unsigned{background:#fef2f2;color:#dc2626}.pc-tag.invoice{background:#fefce8;color:#a16207}
+.pc-tag.received{background:#ecfdf5;color:#047857}
+.pc-progress{font-size:12px;color:#999;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.group-bar{display:flex;flex-direction:column;gap:10px}
+.group-item{display:flex;align-items:center;gap:8px}
+.group-name{width:40px;font-size:12px;color:#666}
+.bar-bg{flex:1;height:20px;background:#eee;border-radius:10px;overflow:hidden}
+.bar-fill{height:100%;border-radius:10px}
+.group-count{font-size:12px;color:#333;width:30px;text-align:right}
+.month-grid{display:flex;justify-content:space-between;align-items:flex-end;height:140px;padding-top:10px}
+.month-item{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center}
+.month-label{font-size:10px;color:#999;margin-bottom:4px}
+.month-bar{width:20px;background:#dbeafe;border-radius:4px 4px 0 0;min-height:2px}
+.month-item.has .month-bar{background:#1a56db}
+.month-val{font-size:9px;color:#666;margin-top:2px}
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.info-row .label{font-size:13px;color:#888}.info-row .value{font-size:14px;font-weight:500;text-align:right}
+.amount-main{text-align:center;padding:16px 0;border-bottom:1px solid #f0f0f0;margin-bottom:12px}
+.amount-big{font-size:13px;color:#888;display:block}
+.amount-num{font-size:32px;font-weight:700;color:#1a56db}
+.amount-grid{display:flex;gap:8px;margin-bottom:12px}
+.amount-item{flex:1;background:#f8fafc;border-radius:8px;padding:10px 8px;text-align:center}
+.amount-item.green{background:#ecfdf5}.amount-item.orange{background:#fff7ed}.amount-item.blue{background:#eff6ff}
+.amount-label{font-size:11px;color:#888;display:block;margin-bottom:4px}
+.amount-value{font-size:16px;font-weight:700}.amount-item.green .amount-value{color:#047857}
+.amount-item.orange .amount-value{color:#c2410c}.amount-item.blue .amount-value{color:#1a56db}
+.tab-bar{display:flex;margin-bottom:16px}
+.tab{flex:1;text-align:center;padding:10px;font-size:13px;color:#666;border-bottom:2px solid transparent;cursor:pointer}
+.tab.active{color:#1a56db;border-bottom-color:#1a56db;font-weight:600}
+.payment-card{background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer}
+.payment-card.legacy{border-left:3px solid #dc2626}
+.p-name{font-size:15px;font-weight:600;display:block;margin-bottom:4px}
+.p-client{font-size:12px;color:#999}
+.p-info{display:flex;gap:16px;margin:8px 0;font-size:13px}
+.p-progress{font-size:12px;color:#888;line-height:1.5}
+.member-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f8f8f8;cursor:pointer}
+.member-name{font-size:14px;font-weight:500;width:80px}.member-title{flex:1;font-size:12px;color:#888}
+.member-revenue{font-size:14px;font-weight:600;color:#1a56db}
+.person-card{display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border-radius:10px;margin-bottom:8px;cursor:pointer}
+.rank{font-size:20px;font-weight:700;width:28px;text-align:center}
+.person-info{flex:1}.person-name{font-size:14px;font-weight:600;display:block}
+.person-revenue{font-size:14px;font-weight:700;color:#1a56db}
+.empty{text-align:center;padding:40px;color:#999}
+.login-page{flex-direction:column;align-items:center;min-height:100vh;background:linear-gradient(160deg,#1a56db,#3b82f6,#60a5fa);padding:60px 24px 40px}
+.login-page.active{display:flex}
+.login-top{text-align:center;margin-bottom:32px}.login-logo{font-size:32px;font-weight:700;color:#fff;letter-spacing:2px}
+.login-sub{font-size:13px;color:rgba(255,255,255,.7);margin-top:6px;display:block}
+.login-card{width:100%;max-width:340px;background:#fff;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.login-title{font-size:20px;font-weight:700;color:#1a1a2e;margin-bottom:6px;display:block}
+.login-desc{font-size:13px;color:#888;margin-bottom:20px;display:block}
+.role-btn{width:100%;padding:14px;border-radius:10px;font-size:16px;font-weight:600;margin-top:8px;border:none;cursor:pointer}
+.role-btn.admin{background:#1a1a2e;color:#fff}.role-btn.staff{background:#eff6ff;color:#1a56db;border:1px solid #dbeafe}
+.role-hint{font-size:11px;color:#bbb;margin-top:4px;display:block}
+.login-divider{display:flex;align-items:center;margin:16px 0}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
+.login-divider span{padding:0 12px;font-size:12px;color:#ccc}
+.pin-input{width:100%;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:16px;text-align:center;margin-top:8px}
+.pin-btn{width:100%;margin-top:12px;padding:10px;border-radius:8px;background:#1a56db;color:#fff;border:none;font-size:15px;cursor:pointer}
+.back-link{font-size:13px;color:#1a56db;margin-top:12px;cursor:pointer;display:inline-block}
+.navbar{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #e5e7eb;z-index:100}
+.nav-item{flex:1;text-align:center;padding:8px 0;font-size:11px;color:#999;cursor:pointer}
+.nav-item.active{color:#1a56db;font-weight:600}
+.add-btn{background:#1a56db;color:#fff;padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;white-space:nowrap}
+.form-item{margin-bottom:14px}.form-label{font-size:13px;color:#666;margin-bottom:4px;display:block}
+.form-input{width:100%;padding:10px 14px;background:#f8fafc;border-radius:8px;font-size:14px;border:1px solid #e5e7eb}
+.submit-btn{width:100%;padding:12px;border-radius:10px;background:#1a56db;color:#fff;font-size:16px;font-weight:600;border:none;cursor:pointer;margin-top:12px}
+/* 成员卡片 */
+.member-card{display:flex;align-items:center;background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer}
+.member-left{margin-right:12px}
+.member-avatar{width:40px;height:40px;border-radius:50%;background:#1a56db;color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.member-mid{flex:1}
+.m-name{font-size:15px;font-weight:600;display:block}
+.m-title{font-size:12px;color:#888}
+.m-group{font-size:11px;color:#1a56db;background:#eff6ff;padding:1px 8px;border-radius:4px;margin-left:6px}
+.member-right{text-align:right}
+.m-revenue{font-size:15px;font-weight:700;color:#1a56db;display:block}
+.m-projects{font-size:11px;color:#999}
+/* 信息卡片 */
+.info-card{background:#fff;border-radius:10px;padding:16px;margin-bottom:12px}
+.section-title{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:10px;display:block}
+/* 信息行 */
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.info-row .label{font-size:13px;color:#888}
+.info-row .value{font-size:14px;font-weight:500;text-align:right}
+.value.blue{color:#1a56db}
+/* 月度柱状 */
+.month-grid{display:flex;justify-content:space-between;align-items:flex-end;height:140px;padding-top:10px}
+.month-item{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center}
+.month-label{font-size:10px;color:#999;margin-bottom:4px}
+.month-bar{width:20px;background:#dbeafe;border-radius:4px 4px 0 0;min-height:2px}
+.month-item.has .month-bar{background:#1a56db}
+.month-val{font-size:9px;color:#666;margin-top:2px}
+/* 管理页 */
+.export-btn{width:100%;padding:12px;border-radius:8px;background:#1a56db;color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;margin-top:8px}
+.export-btn.danger{background:#dc2626}
+.money-row{display:flex;justify-content:space-between;margin-bottom:8px}
+.money-item{flex:1;text-align:center}
+.money-label{font-size:12px;color:#999;display:block}
+.money-value{font-size:18px;font-weight:700;display:block}
+.desc{font-size:13px;color:#888;margin-bottom:12px;display:block}
+.desc.warn{color:#b45309}
+.form-textarea{width:100%;min-height:100px;padding:10px 14px;background:#f8fafc;border-radius:8px;font-size:14px;border:1px solid #e5e7eb;box-sizing:border-box;resize:vertical}
+.back-link{font-size:13px;color:#1a56db;margin-top:12px;cursor:pointer;display:inline-block}
+
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginPage" class="login-page page active">
+  <div class="login-top"><div class="login-logo">维诚评估</div><div class="login-sub">评估部项目管理系统 v1.0</div></div>
+  <div class="login-card" id="loginMain">
+    <div class="login-title">欢迎使用</div><div class="login-desc">请选择您的登录方式</div>
+    <button class="role-btn admin" onclick="showAdminLogin()">管理员入口</button>
+    <div class="role-hint">需输入验证码，可查看全局数据</div>
+    <div class="login-divider"><span>或</span></div>
+    <button class="role-btn staff" onclick="showStaffLogin()">员工入口</button>
+    <div class="role-hint">输入姓名匹配业绩，仅查看个人工作数据</div>
+  </div>
+  <div class="login-card" id="loginStaff" style="display:none">
+    <div class="login-title">员工登录</div><div class="login-desc">请输入您的姓名匹配业绩数据</div>
+    <input class="pin-input" id="staffName" placeholder="输入姓名，如：李永秋" onkeypress="if(event.key==='Enter')staffLogin()">
+    <button class="pin-btn" onclick="staffLogin()">进入系统</button>
+    <span class="back-link" onclick="backToMain()">返回选择</span>
+  </div>
+  <div class="login-card" id="loginAdmin" style="display:none">
+    <div class="login-title">管理员验证</div>
+    <input class="pin-input" type="password" id="pinInput" maxlength="6" placeholder="输入6位验证码" onkeypress="if(event.key==='Enter')adminLogin()">
+    <button class="pin-btn" onclick="adminLogin()">验证</button>
+    <span class="back-link" onclick="backToMain()">返回选择</span>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashPage" class="page">
+  <div class="header"><div class="title" id="dashTitle">全局概览</div><span class="logout" onclick="logout()">退出</span></div>
+  <div class="stat-grid" id="dashStats"></div>
+  <div class="card" id="dashFinance"></div>
+  <div class="card" id="dashGroups"></div>
+</div>
+
+<!-- Projects -->
+<div id="projPage" class="page">
+  <div class="header"><div class="title">项目列表</div><span class="add-btn" onclick="showAddForm()">+ 新增</span></div>
+  <input class="search-input" id="projSearch" placeholder="搜索委托方或项目名" oninput="renderProjects()">
+  <div class="filter-row" id="projStatusFilter"></div>
+  <div class="filter-row" id="projGroupFilter"></div>
+  <div id="projList"></div>
+</div>
+
+<!-- Add Project -->
+<div id="addPage" class="page">
+  <div class="header"><div class="title">新增项目</div><span class="logout" onclick="showPage('proj')">返回</span></div>
+  <div class="card">
+    <div class="form-item"><div class="form-label">项目名称 *</div><input class="form-input" id="addName" placeholder="如：XX公司资产评估"></div>
+    <div class="form-item"><div class="form-label">委托方 *</div><input class="form-input" id="addClient" placeholder="如：成都XX集团有限公司"></div>
+    <div class="form-item"><div class="form-label">合同金额 *</div><input class="form-input" type="number" id="addTotal" placeholder="如：50000"></div>
+    <div class="form-item"><div class="form-label">所属组</div><select class="form-input" id="addGroup"><option value="">请选择</option><option value="group1">一组</option><option value="group2">二组</option><option value="group3">三组</option></select></div>
+    <div class="form-item"><div class="form-label">负责人</div><select class="form-input" id="addLead"><option value="">请选择</option></select></div>
+    <button class="submit-btn" onclick="submitProject()">确认登记</button>
+  </div>
+</div>
+
+<!-- Detail -->
+<div id="detailPage" class="page">
+  <div class="header"><div class="title" id="detailTitle">项目详情</div><span class="logout" onclick="showPage('proj')">返回</span></div>
+  <div id="detailToolbar" style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="add-btn" id="detailEditBtn" onclick="editDetail()" style="background:#f59e0b">编辑</button>
+    <button class="add-btn" id="detailSaveBtn" onclick="saveDetail()" style="background:#047857;display:none">保存</button>
+    <button class="add-btn" id="detailCancelBtn" onclick="showDetail(detailProject?detailProject.id:'')" style="background:#999;display:none">取消</button>
+  </div>
+  <div id="detailContent"></div>
+</div>
+
+<!-- Payment -->
+<div id="payPage" class="page">
+  <div class="header"><div class="title">收款跟踪</div></div>
+  <div class="tab-bar">
+    <div class="tab active" id="payTabLegacy" onclick="switchPayTab('legacy')">遗留催收</div>
+    <div class="tab" id="payTabUnpaid" onclick="switchPayTab('unpaid')">应收未收</div>
+  </div>
+  <div id="payList"></div>
+</div>
+
+<!-- Stats -->
+<div id="statsPage" class="page">
+  <div class="header"><div class="title">业绩统计</div></div>
+  <div class="tab-bar">
+    <div class="tab active" id="statTabGroup" onclick="switchStatTab('group')">按组</div>
+    <div class="tab" id="statTabMonthly" onclick="switchStatTab('monthly')">按月</div>
+    <div class="tab" id="statTabPersonal" onclick="switchStatTab('personal')">排行</div>
+  </div>
+  <div id="statsContent"></div>
+</div>
+
+<!-- Admin -->
+<div id="adminPage" class="page">
+  <div class="header"><div class="title">数据管理</div></div>
+  <div class="card">
+    <div class="card-title">当前数据</div>
+    <div class="money-row" id="adminStats"></div>
+    <div id="adminPending"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">导出数据→Excel</div>
+    <div class="desc">复制JSON到PC，运行 merge_back.py 写回Excel</div>
+    <button class="export-btn" onclick="adminExportAll()">导出全部数据</button>
+    <button class="export-btn" onclick="adminExportPending()">仅导出新增</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Excel→导入数据</div>
+    <div class="desc">PC运行 sync_excel.py 生成JSON，粘贴到下方</div>
+    <button class="export-btn" onclick="adminShowImport()">导入数据</button>
+    <div id="adminImportArea" style="display:none">
+      <textarea class="form-textarea" id="adminImportText" placeholder="粘贴JSON数据..."></textarea>
+      <button class="submit-btn" onclick="adminConfirmImport()">确认导入</button>
+    </div>
+  </div>
+  <div class="card" id="adminBackups"></div>
+  <div class="card">
+    <div class="card-title">重置</div>
+    <div class="desc">清除所有本地修改，恢复Excel原始数据</div>
+    <button class="export-btn danger" onclick="adminClearAll()">清除本地数据</button>
+  </div>
+</div>
+
+<!-- Members -->
+<div id="membersPage" class="page">
+  <div class="header"><div class="title">人员管理</div></div>
+  <input class="search-input" id="memberSearch" placeholder="搜索人员姓名或职称" oninput="renderMembers()">
+  <div class="filter-row" id="memberGroupFilter"></div>
+  <div id="memberList"></div>
+</div>
+
+<!-- Member Detail -->
+<div id="memberDetailPage" class="page">
+  <div class="header"><div class="title" id="memberDetailTitle">人员详情</div><span class="logout" onclick="showPage('members')">返回</span></div>
+  <div id="memberDetailContent"></div>
+</div>
+
+<!-- Navbar -->
+<div class="navbar" id="navbar" style="display:none">
+  <div class="nav-item active" id="navDash" onclick="showPage('dash')">首页</div>
+  <div class="nav-item" id="navProj" onclick="showPage('proj')">项目</div>
+  <div class="nav-item" id="navPay" onclick="showPage('pay')">收款</div>
+  <div class="nav-item" id="navStats" onclick="showPage('stats')">业绩</div>
+  <div class="nav-item" id="navMembers" onclick="showPage('members')">人员</div>
+  <div class="nav-item" id="navAdmin" onclick="showPage('admin')">管理</div>
+</div>
+
+
+<script src="data.js"></script>
+<script>
+// ===== DATA =====
+var projectData = (typeof EMBEDDED_DATA !== 'undefined') ? EMBEDDED_DATA : { projects: [], employees: [], performance: {}, stats: {} };
+
+// ===== STATE =====
+var currentUser = null;
+var isAdmin = false;
+var isLeader = false;
+var userRole = 'guest';  // 'admin' | 'leader' | 'member'
+var userGroup = '';
+var currentPage = 'login';
+var payTab = 'legacy';
+var statTab = 'group';
+var projFilter = { status: 'all', group: 'all', keyword: '' };
+var detailProject = null;
+
+function findEmployee(name) {
+  var emps = projectData.employees || [];
+  for (var i = 0; i < emps.length; i++) {
+    if (emps[i].name === name) return emps[i];
+  }
+  return null;
+}
+
+// 管理员设定的组长名单（持久化到 localStorage）
+function getLeaders() {
+  try { return JSON.parse(localStorage.getItem('eval_leaders') || '[]'); } catch(e) { return []; }
+}
+function setLeaders(list) {
+  localStorage.setItem('eval_leaders', JSON.stringify(list));
+}
+function isPersonLeader(name) {
+  var emp = findEmployee(name);
+  if (emp && emp.dept === '组长') return true; // 原始数据中的组长
+  return getLeaders().indexOf(name) >= 0; // 管理员手动指定
+}
+
+function filterByRole(list) {
+  if (userRole === 'admin') return list;
+  if (userRole === 'leader' && userGroup) {
+    return list.filter(function(p) { return p.group === userGroup; });
+  }
+  if (userRole === 'member') {
+    var name = currentUser ? currentUser.nickName : '';
+    return list.filter(function(p) { return p.lead && p.lead.indexOf(name) >= 0; });
+  }
+  return list;
+}
+
+// ===== INIT =====
+function init() {
+  try {
+    var u = localStorage.getItem('eval_user');
+    if (u) {
+      currentUser = JSON.parse(u);
+      isAdmin = currentUser.role === 'admin';
+      isLeader = currentUser.role === 'leader';
+      userRole = currentUser.role || 'member';
+      if (!isAdmin) {
+        var emp = findEmployee(currentUser.nickName);
+        userGroup = emp ? (emp.group || '') : '';
+      }
+      showPage('dash');
+    }
+  } catch(e) { console.error('Init error:', e); }
+}
+
+// ===== LOGIN =====
+function showAdminLogin() { document.getElementById('loginMain').style.display='none'; document.getElementById('loginAdmin').style.display='block'; }
+function backToMain() { document.getElementById('loginMain').style.display='block'; document.getElementById('loginAdmin').style.display='none'; document.getElementById('loginStaff').style.display='none'; }
+function showStaffLogin() {
+  document.getElementById('loginMain').style.display='none';
+  document.getElementById('loginStaff').style.display='block';
+  document.getElementById('loginStaff').innerHTML = renderStaffLogin();
+}
+
+function renderStaffLogin() {
+  var emps = (projectData.employees || []).filter(function(e) { return e.name && e.status !== '离职'; });
+  var kw = document.getElementById('staffName') ? document.getElementById('staffName').value.toLowerCase() : '';
+  if (kw) emps = emps.filter(function(e) { return e.name.toLowerCase().indexOf(kw) >= 0 || (e.title||'').toLowerCase().indexOf(kw) >= 0; });
+  var gm = {group1:'一组',group2:'二组',group3:'三组'};
+  var h = '<div class="login-title">员工登录</div><div class="login-desc">搜索并选择您的姓名</div>'+
+    '<input class="pin-input" id="staffName" placeholder="搜索姓名..." oninput="document.getElementById(\'loginStaff\').innerHTML = renderStaffLogin()" autofocus>'+
+    '<div style="max-height:300px;overflow-y:auto;margin:8px 0;text-align:left">';
+  emps.slice(0,30).forEach(function(e){
+    var isLdr = isPersonLeader(e.name);
+    var tag = isLdr ? '<span style="font-size:11px;background:#fef3c7;color:#b45309;padding:1px 6px;border-radius:4px;margin-left:6px">组长</span>' : '';
+    h += '<div style="display:flex;align-items:center;padding:10px 8px;border-bottom:1px solid #f5f5f5;cursor:pointer" onclick="staffLoginSelect(\x27'+e.name.replace(/'/g,'\\x27')+'\x27)">'+
+      '<div style="width:36px;height:36px;border-radius:50%;background:#1a56db;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:10px">'+e.name.charAt(0)+'</div>'+
+      '<div style="flex:1"><div style="font-size:14px;font-weight:500">'+e.name+tag+'</div><div style="font-size:11px;color:#999">'+(e.title||'')+'</div></div>'+
+      '<div style="font-size:11px;color:#1a56db">'+(gm[e.group]||'')+'</div></div>';
+  });
+  h += emps.length>30 ? '<div style="text-align:center;padding:8px;color:#999;font-size:12px">继续输入以精确搜索...</div>' : '';
+  h += '</div><span class="back-link" onclick="backToMain()">← 返回选择</span>';
+  return h;
+}
+
+function staffLoginSelect(name) {
+  var isLdr = isPersonLeader(name);
+  currentUser = { nickName: name, role: isLdr ? 'leader' : 'member' };
+  isAdmin = false;
+  isLeader = isLdr;
+  userRole = isLdr ? 'leader' : 'member';
+  var emp = findEmployee(name);
+  userGroup = emp ? (emp.group || '') : '';
+  localStorage.setItem('eval_user', JSON.stringify(currentUser));
+  showPage('dash');
+}
+
+function adminLogin() {
+  var pin = document.getElementById('pinInput').value;
+  if (pin !== '888999') { alert('验证码错误'); return; }
+  currentUser = { nickName: '管理员', role: 'admin' };
+  isAdmin = true; isLeader = false;
+  userRole = 'admin'; userGroup = '';
+  localStorage.setItem('eval_user', JSON.stringify(currentUser));
+  showPage('dash');
+}
+
+function logout() {
+  localStorage.removeItem('eval_user');
+  currentUser = null; isAdmin = false; isLeader = false;
+  userRole = 'guest'; userGroup = '';
+  showPage('login');
+}
+
+// ===== NAVIGATION =====
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(function(n){ n.classList.remove('active'); });
+  
+  if (page === 'login') {
+    document.getElementById('loginPage').classList.add('active');
+    document.getElementById('navbar').style.display = 'none';
+    backToMain();
+  } else {
+    document.getElementById(page+'Page').classList.add('active');
+    document.getElementById('navbar').style.display = 'flex';
+    var map = { dash:'navDash', proj:'navProj', pay:'navPay', stats:'navStats', members:'navMembers', admin:'navAdmin' };
+    if (map[page]) document.getElementById(map[page]).classList.add('active');
+  }
+  currentPage = page;
+  window.scrollTo(0,0);
+  
+  // Role-based navbar visibility
+  var navMembers = document.getElementById('navMembers');
+  var navAdmin = document.getElementById('navAdmin');
+  if (navMembers) navMembers.style.display = (userRole === 'admin' || userRole === 'leader') ? '' : 'none';
+  if (navAdmin) navAdmin.style.display = (userRole === 'admin') ? '' : 'none';
+  if (page === 'dash') renderDashboard();
+  if (page === 'proj') renderProjects();
+  if (page === 'pay') renderPayment();
+  if (page === 'stats') renderStats();
+  if (page === 'members') renderMembers();
+  if (page === 'admin') renderAdmin();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  var data = projectData;
+  var all = data.projects || [];
+  var emps = data.employees || [];
+  var myName = currentUser ? currentUser.nickName : '';
+  var s = data.stats || {};
+  
+  // Role-filtered projects
+  var visibleProjects = all;
+  if (userRole === 'leader' && userGroup) {
+    visibleProjects = all.filter(function(p){ return p.group === userGroup; });
+  } else if (userRole === 'member') {
+    visibleProjects = all.filter(function(p){ return p.lead && p.lead.indexOf(myName) >= 0; });
+  }
+  var mainProjs = visibleProjects.filter(function(p){return !p.isLegacy;});
+  var totalRev = mainProjs.reduce(function(s,p){return s+(p.total||0);},0);
+  
+  var statsHtml = '';
+  if (isAdmin) {
+    statsHtml = '<div class="stat-item" onclick="showPage(\'proj\')"><div class="stat-num">'+(s.total||0)+'</div><div class="stat-label">项目总数</div></div>'+
+      '<div class="stat-item green"><div class="stat-num">'+(s.completed||0)+'</div><div class="stat-label">已完成</div></div>'+
+      '<div class="stat-item orange"><div class="stat-num">'+(s.inProgress||0)+'</div><div class="stat-label">进行中</div></div>'+
+      '<div class="stat-item red"><div class="stat-num">'+(s.legacy||0)+'</div><div class="stat-label">遗留催收</div></div>';
+  } else if (isLeader) {
+    var leaderStats = { total: visibleProjects.length,
+      completed: mainProjs.filter(function(p){return p.status==='completed';}).length,
+      inProgress: mainProjs.filter(function(p){return p.status==='inProgress';}).length };
+    statsHtml = '<div class="stat-item"><div class="stat-num">'+leaderStats.total+'</div><div class="stat-label">本组项目</div></div>'+
+      '<div class="stat-item green"><div class="stat-num">'+leaderStats.completed+'</div><div class="stat-label">已完成</div></div>'+
+      '<div class="stat-item orange"><div class="stat-num">'+leaderStats.inProgress+'</div><div class="stat-label">进行中</div></div>'+
+      '<div class="stat-item red"><div class="stat-num">'+totalRev+'</div><div class="stat-label">本组营收</div></div>';
+  } else {
+    statsHtml = '<div class="stat-item"><div class="stat-num">'+visibleProjects.length+'</div><div class="stat-label">我的项目</div></div>'+
+      '<div class="stat-item orange"><div class="stat-num">'+mainProjs.filter(function(p){return p.status==="pending"||p.status==="inProgress"}).length+'</div><div class="stat-label">待处理</div></div>'+
+      '<div class="stat-item green"><div class="stat-num">'+totalRev+'</div><div class="stat-label">我的业绩</div></div>';
+  }
+  document.getElementById('dashStats').innerHTML = statsHtml;
+  var titleMap = { admin: '全局概览', leader: '本组概览', member: '我的工作台' };
+  document.getElementById('dashTitle').innerHTML = titleMap[userRole] || '我的工作台';
+  
+  var rev = totalRev;
+  var ry = mainProjs.reduce(function(s,p){return s+(p.yushou||0);},0);
+  var rs = mainProjs.reduce(function(s,p){return s+(p.shishou||0);},0);
+  var rv = rev||1;
+  var rpct = Math.round((ry+rs)/rv*100);
+  var ypct = Math.round(ry/rv*100);
+  var spct = Math.round(rs/rv*100);
+  
+  var signedCount = mainProjs.filter(function(p){return p.contractSigned;}).length;
+  var unsignedCount = mainProjs.filter(function(p){return !p.contractSigned;}).length;
+  
+  document.getElementById('dashFinance').innerHTML = '<div class="card-title">财务概览</div>'+
+    '<div class="fin-bar-wrap"><div class="fin-bar-row"><div class="fin-label">总营收</div><div class="fin-val">'+rev+'</div></div><div class="fin-bar-bg"><div class="fin-bar-fill blue"></div></div></div>'+
+    '<div class="fin-bar-wrap"><div class="fin-bar-row"><div class="fin-label">已收款 '+rpct+'%</div><div class="fin-val green">'+(ry+rs)+'</div></div><div class="fin-bar-bg"><div class="fin-bar-fill" style="width:'+ypct+'%;background:#34d399;border-radius:3px 0 0 3px"></div><div class="fin-bar-fill" style="width:'+spct+'%;background:#047857;border-radius:0 3px 3px 0"></div></div><div class="fin-sub-row"><div class="fin-sub">预收 '+ry+'</div><div class="fin-sub">实收 '+rs+'</div></div></div>'+
+    '<div class="fin-footer"><div class="fin-tag signed">已签'+signedCount+'个</div><div class="fin-tag unsigned">未签'+unsignedCount+'个</div></div>';
+  
+  if (isAdmin) {
+    var gh = '';
+    [{n:'一组',c:(s.group1||0),t:s.total||1,clr:'#1a56db'},{n:'二组',c:(s.group2||0),t:s.total||1,clr:'#047857'},{n:'三组',c:(s.group3||0),t:s.total||1,clr:'#b45309'}].forEach(function(g){
+      gh += '<div class="group-item"><div class="group-name">'+g.n+'</div><div class="bar-bg"><div class="bar-fill" style="width:'+Math.round(g.c/g.t*100)+'%;background:'+g.clr+'"></div></div><div class="group-count">'+g.c+'个</div></div>';
+    });
+    document.getElementById('dashGroups').innerHTML = '<div class="card-title">各组项目分布</div><div class="group-bar">'+gh+'</div>';
+    document.getElementById('dashGroups').style.display = '';
+  } else if (isLeader) {
+    document.getElementById('dashGroups').innerHTML = '<div class="card-title">本组概况</div><div style="font-size:13px;color:#666;line-height:1.6">成员 '+(emps.filter(function(e){return e.group===userGroup;}).length)+' 人 · 项目 '+visibleProjects.length+' 个 · 应收 '+mainProjs.reduce(function(s,p){return s+(p.yingshou||0);},0)+' 元</div>';
+    document.getElementById('dashGroups').style.display = '';
+  } else {
+    document.getElementById('dashGroups').style.display = 'none';
+  }
+}
+
+// ===== PROJECTS =====
+function renderProjects() {
+  var pending = JSON.parse(localStorage.getItem('eval_pending')||'[]');
+  var all = (projectData.projects||[]).concat(pending);
+  var list = all;
+  if (projFilter.status !== 'all') list = list.filter(function(p){return p.status===projFilter.status;});
+  if (projFilter.group !== 'all') list = list.filter(function(p){return p.group===projFilter.group;});
+  if (projFilter.keyword) { var kw=projFilter.keyword.toLowerCase(); list=list.filter(function(p){return (p.name||'').toLowerCase().indexOf(kw)>=0||(p.client||'').toLowerCase().indexOf(kw)>=0;}); }
+  
+  // Role-based filtering
+  if (userRole === 'leader' && userGroup) {
+    list = list.filter(function(p){ return p.group === userGroup; });
+  } else if (userRole === 'member') {
+    var myName = currentUser ? currentUser.nickName : '';
+    list = list.filter(function(p){ return p.lead && p.lead.indexOf(myName) >= 0; });
+  }
+  
+  list.sort(function(a,b){return (b.total||0)-(a.total||0);});
+  
+  var html = '';
+  list.forEach(function(p){
+    var badge = p.status==='completed'?'badge-completed':p.status==='inProgress'?'badge-inProgress':p.status==='legacy'?'badge-legacy':'badge-pending';
+    var btxt = p.status==='completed'?'已完成':p.status==='inProgress'?'进行中':p.status==='legacy'?'遗留':'待跟进';
+    var gm = {group1:'一组',group2:'二组',group3:'三组'};
+    html += '<div class="proj-card'+(p.isLegacy?' legacy':'')+'" onclick="showDetail(\''+p.id+'\')">'+
+      '<div class="pc-top"><div class="pc-name">'+p.name+'</div><div class="pc-badge '+badge+'">'+btxt+'</div></div>'+
+      '<div class="pc-mid"><div class="pc-client">'+p.client+'</div><div class="pc-amount">'+p.total+'</div></div>'+
+      '<div class="pc-tags">'+(p.group?'<div class="pc-tag group">'+(gm[p.group]||p.group)+'</div>':'')+
+      '<div class="pc-tag '+(p.contractSigned?'signed':'unsigned')+'">'+(p.contractSigned?'已签':'未签')+'</div>'+
+      (p.invoice>0?'<div class="pc-tag invoice">开票'+p.invoice+'</div>':'')+
+      ((p.shishou||p.yushou)>0?'<div class="pc-tag received">已收'+(p.shishou||p.yushou||0)+'</div>':'')+'</div>'+
+      (p.progress?'<div class="pc-progress">'+p.progress+'</div>':'')+'</div>';
+  });
+  document.getElementById('projList').innerHTML = html || '<div class="empty">无匹配项目</div>';
+  
+  // Filters
+  var sh = ''; [{l:'全部',v:'all'},{l:'已完成',v:'completed'},{l:'进行中',v:'inProgress'},{l:'待跟进',v:'pending'}].forEach(function(o){
+    sh += '<div class="filter-tag'+(projFilter.status===o.v?' active':'')+'" onclick="setProjFilter(\'status\',\''+o.v+'\')">'+o.l+'</div>';
+  });
+  document.getElementById('projStatusFilter').innerHTML = sh;
+  // Filters - hide group filter for non-admin
+  var gh = '';
+  if (userRole === 'admin') {
+    [{l:'全组',v:'all'},{l:'一组',v:'group1'},{l:'二组',v:'group2'},{l:'三组',v:'group3'}].forEach(function(o){
+      gh += '<div class="filter-tag'+(projFilter.group===o.v?' active':'')+'" onclick="setProjFilter(\'group\',\''+o.v+'\')">'+o.l+'</div>';
+    });
+  } else if (userRole === 'leader' && userGroup) {
+    var gn = {group1:'一组',group2:'二组',group3:'三组'};
+    gh = '<div class="filter-tag active">'+(gn[userGroup]||userGroup)+'</div>';
+  }
+  document.getElementById('projGroupFilter').innerHTML = gh;
+  
+  // Hide add button for members
+  var addBtn = document.querySelector('#projPage .add-btn');
+  if (addBtn) addBtn.style.display = (userRole === 'member') ? 'none' : '';
+}
+
+function setProjFilter(key, val) { projFilter[key] = val; renderProjects(); }
+
+// ===== DETAIL =====
+function showDetail(id) {
+  var pending = JSON.parse(localStorage.getItem('eval_pending')||'[]');
+  var all = (projectData.projects||[]).concat(pending);
+  var p = all.find(function(item){return item.id===id||String(item.id)===String(id);});
+  if (!p) return;
+  detailProject = p;
+  var gm = {group1:'一组',group2:'二组',group3:'三组'};
+  var badge = p.status==='completed'?'badge-completed':p.status==='inProgress'?'badge-inProgress':p.status==='legacy'?'badge-legacy':'badge-pending';
+  var btxt = p.status==='completed'?'已完成':p.status==='inProgress'?'进行中':p.status==='legacy'?'遗留催收':'待跟进';
+  
+  document.getElementById('detailContent').innerHTML = 
+    '<div class="detail-header"><div class="pc-name">'+p.name+'</div><div class="pc-badge '+badge+'">'+btxt+'</div></div>'+
+    '<div class="card"><div class="card-title">委托方信息</div>'+
+    '<div class="info-row"><div class="label">委托方</div><div class="value">'+(p.client||'未填写')+'</div></div>'+
+    '<div class="info-row"><div class="label">负责人</div><div class="value">'+(p.lead||'未指定')+' · '+(gm[p.group]||'未分组')+'</div></div></div>'+
+    '<div class="card"><div class="card-title">结算收费</div>'+
+    '<div class="amount-main"><div class="amount-big">合同金额</div><div class="amount-num">'+p.total+'</div></div>'+
+    '<div class="amount-grid"><div class="amount-item green"><div class="amount-label">已收款</div><div class="amount-value">'+(p.shishou||p.yushou||0)+'</div></div>'+
+    '<div class="amount-item orange"><div class="amount-label">待收款</div><div class="amount-value">'+(p.yingshou||0)+'</div></div>'+
+    '<div class="amount-item blue"><div class="amount-label">已开票</div><div class="amount-value">'+(p.invoice||0)+'</div></div></div>'+
+    '<div class="info-row"><div class="label">合同状态</div><div class="value" style="color:'+(p.contractSigned?'#047857':'#dc2626')+'">'+(p.contract||'未签')+'</div></div></div>'+
+    (p.progress?'<div class="card"><div class="card-title">项目进展</div><div style="font-size:13px;color:#555;line-height:1.7">'+p.progress+'</div></div>':'');
+  
+  // Hide member from edit
+  var editBtn = document.getElementById('detailEditBtn');
+  if (editBtn) editBtn.style.display = (userRole === 'member') ? 'none' : '';
+  document.getElementById('detailSaveBtn').style.display = 'none';
+  document.getElementById('detailCancelBtn').style.display = 'none';
+  
+  showPage('detail');
+  document.getElementById('detailPage').classList.add('active');
+  document.getElementById('navbar').style.display = 'flex';
+}
+
+// ===== EDIT PROJECT =====
+function editDetail() {
+  if (!detailProject || userRole === 'member') return;
+  var p = detailProject;
+  var gm = {group1:'一组',group2:'二组',group3:'三组'};
+  var gOpts = '<option value="">未分组</option><option value="group1"'+(p.group==='group1'?' selected':'')+'>一组</option><option value="group2"'+(p.group==='group2'?' selected':'')+'>二组</option><option value="group3"'+(p.group==='group3'?' selected':'')+'>三组</option>';
+  
+  document.getElementById('detailContent').innerHTML = 
+    '<div class="card"><div class="card-title">编辑项目</div>'+
+    '<div class="form-item"><div class="form-label">项目名称</div><input class="form-input" id="editName" value="'+p.name+'"></div>'+
+    '<div class="form-item"><div class="form-label">委托方</div><input class="form-input" id="editClient" value="'+(p.client||'')+'"></div>'+
+    '<div class="form-item"><div class="form-label">合同金额</div><input class="form-input" type="number" id="editTotal" value="'+(p.total||0)+'"></div>'+
+    '<div class="form-item"><div class="form-label">已收款</div><input class="form-input" type="number" id="editShishou" value="'+(p.shishou||p.yushou||0)+'"></div>'+
+    '<div class="form-item"><div class="form-label">待收款</div><input class="form-input" type="number" id="editYingshou" value="'+(p.yingshou||0)+'"></div>'+
+    '<div class="form-item"><div class="form-label">已开票</div><input class="form-input" type="number" id="editInvoice" value="'+(p.invoice||0)+'"></div>'+
+    '<div class="form-item"><div class="form-label">合同状态</div><select class="form-input" id="editContract"><option value="已签订"'+(p.contractSigned?' selected':'')+'>已签订</option><option value="待签"'+(p.contractSigned?'':' selected')+'>待签</option><option value="未签订"'+(p.contractSigned?'':'')+'>未签订</option></select></div>'+
+    '<div class="form-item"><div class="form-label">所属组</div><select class="form-input" id="editGroup">'+gOpts+'</select></div>'+
+    '<div class="form-item"><div class="form-label">负责人</div><input class="form-input" id="editLead" value="'+(p.lead||'')+'"></div>'+
+    '<div class="form-item"><div class="form-label">项目进展</div><textarea class="form-textarea" id="editProgress">'+(p.progress||'')+'</textarea></div>'+
+    '<div class="form-item"><div class="form-label">状态</div><select class="form-input" id="editStatus"><option value="pending"'+(p.status==='pending'?' selected':'')+'>待跟进</option><option value="inProgress"'+(p.status==='inProgress'?' selected':'')+'>进行中</option><option value="completed"'+(p.status==='completed'?' selected':'')+'>已完成</option></select></div></div>';
+  
+  document.getElementById('detailEditBtn').style.display = 'none';
+  document.getElementById('detailSaveBtn').style.display = '';
+  document.getElementById('detailCancelBtn').style.display = '';
+}
+
+function saveDetail() {
+  if (!detailProject) return;
+  var p = detailProject;
+  var gm = {group1:'一组',group2:'二组',group3:'三组'};
+  
+  // Read form values
+  p.name = document.getElementById('editName').value.trim();
+  p.client = document.getElementById('editClient').value.trim();
+  p.total = parseFloat(document.getElementById('editTotal').value)||0;
+  p.yushou = parseFloat(document.getElementById('editShishou').value)||0;
+  p.shishou = 0;
+  p.yingshou = parseFloat(document.getElementById('editYingshou').value)||0;
+  p.invoice = parseFloat(document.getElementById('editInvoice').value)||0;
+  p.contract = document.getElementById('editContract').value;
+  p.contractSigned = p.contract === '已签订';
+  p.group = document.getElementById('editGroup').value;
+  p.lead = document.getElementById('editLead').value.trim();
+  p.progress = document.getElementById('editProgress').value.trim();
+  p.status = document.getElementById('editStatus').value;
+  p.reportUnit = gm[p.group]||'';
+  
+  // Save to pending (handle new + existing projects)
+  var pending = JSON.parse(localStorage.getItem('eval_pending')||'[]');
+  var idx = -1;
+  for (var i=0;i<pending.length;i++) {
+    if (pending[i].id === p.id) { idx = i; break; }
+  }
+  if (idx >= 0) {
+    pending[idx] = p;
+  } else {
+    // If it's an original Excel project, add a copy to pending
+    pending.push(p);
+  }
+  localStorage.setItem('eval_pending', JSON.stringify(pending));
+  
+  // Refresh to view mode
+  showDetail(p.id);
+  alert('保存成功');
+}
+
+// ===== ADD PROJECT =====
+function showAddForm() {
+  showPage('add');
+  document.getElementById('addPage').classList.add('active');
+  document.getElementById('navbar').style.display = 'none';
+  // Populate lead selector based on selected group
+  populateLeadOptions();
+  // Leader auto-set group
+  if (userRole === 'leader' && userGroup) {
+    document.getElementById('addGroup').value = userGroup;
+    document.getElementById('addGroup').disabled = true;
+    populateLeadOptions();
+  }
+}
+
+function populateLeadOptions() {
+  var g = document.getElementById('addGroup').value;
+  var emps = (projectData.employees || []).filter(function(e){ return e.name && (!g || e.group === g); });
+  var sel = document.getElementById('addLead');
+  sel.innerHTML = '<option value="">请选择</option>' + emps.map(function(e){ return '<option value="'+e.name+'">'+e.name+'</option>'; }).join('');
+}
+
+// Re-populate leads when group changes
+document.addEventListener('DOMContentLoaded', function() {
+  var gs = document.getElementById('addGroup');
+  if (gs) gs.addEventListener('change', populateLeadOptions);
+});
+// Also bind in submit function's context
+function bindGroupChange() {
+  var gs = document.getElementById('addGroup');
+  if (gs && !gs._bound) { gs._bound = true; gs.addEventListener('change', populateLeadOptions); }
+}
+
+function submitProject() {
+  var name = document.getElementById('addName').value.trim();
+  var client = document.getElementById('addClient').value.trim();
+  var total = parseFloat(document.getElementById('addTotal').value)||0;
+  var group = document.getElementById('addGroup').value;
+  var lead = document.getElementById('addLead').value;
+  if (!name||!client||!total) { alert('请填写完整'); return; }
+  var now = new Date();
+  var gm = {group1:'一组',group2:'二组',group3:'三组'};
+  var p = { id:'NEW'+Date.now().toString(36).toUpperCase(), name:name, client:client, total:total,
+    yushou:0, yingshou:total, shishou:0, invoice:0, contract:'待签', contractSigned:false,
+    progress: (now.getMonth()+1)+'月'+now.getDate()+'日新增', status:'pending', isLegacy:false,
+    group: group, lead: lead, reportUnit: gm[group]||'', stage:'', hasInvoice:false };
+  var pending = JSON.parse(localStorage.getItem('eval_pending')||'[]');
+  pending.unshift(p);
+  localStorage.setItem('eval_pending', JSON.stringify(pending));
+  document.getElementById('addName').value=''; document.getElementById('addClient').value=''; document.getElementById('addTotal').value='';
+  document.getElementById('addGroup').value=''; document.getElementById('addLead').innerHTML='<option value="">请选择</option>';
+  alert('登记成功');
+  showPage('proj');
+}
+
+// ===== PAYMENT =====
+function switchPayTab(tab) { payTab=tab; document.getElementById('payTabLegacy').classList.toggle('active',tab==='legacy'); document.getElementById('payTabUnpaid').classList.toggle('active',tab==='unpaid'); renderPayment(); }
+function renderPayment() {
+  var all = projectData.projects||[];
+  var list = payTab==='legacy' ? all.filter(function(p){return p.status==='legacy';}) : all.filter(function(p){return (p.yingshou||0)>0&&p.status!=='legacy';});
+  // Role-based: member sees own, leader sees group
+  if (userRole === 'leader' && userGroup) {
+    list = list.filter(function(p){ return p.group === userGroup; });
+  } else if (userRole === 'member') {
+    var myName = currentUser ? currentUser.nickName : '';
+    list = list.filter(function(p){ return p.lead && p.lead.indexOf(myName) >= 0; });
+  }
+  list.sort(function(a,b){return (b.yingshou||0)-(a.yingshou||0);});
+  var html = '';
+  list.forEach(function(p){
+    html += '<div class="payment-card'+(p.isLegacy?' legacy':'')+'" onclick="showDetail(\''+p.id+'\')">'+
+      '<div class="p-name">'+p.name+'</div><div class="p-client">'+p.client+'</div>'+
+      '<div class="p-info"><span>总额 '+p.total+'</span><span style="color:#047857">已收 '+(p.shishou||p.yushou||0)+'</span><span style="color:#dc2626">待收 '+(p.yingshou||0)+'</span></div>'+
+      (p.progress?'<div class="p-progress">'+p.progress+'</div>':'')+'</div>';
+  });
+  document.getElementById('payList').innerHTML = html || '<div class="empty">全部已收齐</div>';
+}
+
+// ===== STATS =====
+function switchStatTab(tab) { statTab=tab; ['group','monthly','personal'].forEach(function(t){document.getElementById('statTab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active',tab===t);}); renderStats(); }
+function renderStats() {
+  var emps = projectData.employees||[];
+  var perf = projectData.performance||{};
+  var projects = projectData.projects||[];
+  var mk = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  var mkl = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  
+  // Member: personal view only
+  if (userRole === 'member') {
+    var myName = currentUser ? currentUser.nickName : '';
+    var myPerf = perf[myName] || { total: 0 };
+    var myProjs = projects.filter(function(p){ return p.lead && p.lead.indexOf(myName) >= 0; });
+    var monthly = mkl.map(function(l,i){ return { label:l, value: myPerf[mk[i]]||0 }; });
+    var mmax = Math.max.apply(null, monthly.map(function(m){return m.value;}))||1;
+    var html = '<div class="card"><div class="card-title">我的月度业绩</div><div class="month-grid">';
+    monthly.forEach(function(m){
+      html += '<div class="month-item'+(m.value>0?' has':'')+'"><div class="month-label">'+m.label+'</div><div class="month-bar" style="height:'+(m.value/mmax*120+4)+'px"></div><div class="month-val">'+(m.value>0?Math.round(m.value):'')+'</div></div>';
+    });
+    html += '</div></div>';
+    // Rank in group
+    var emp = findEmployee(myName);
+    if (emp && emp.group) {
+      var groupEmps = emps.filter(function(e){return e.group===emp.group;});
+      var rankList = groupEmps.map(function(e){var pd=perf[e.name]||{total:0};return {name:e.name,revenue:pd.total||0};}).sort(function(a,b){return b.revenue-a.revenue;});
+      var myRank = 1;
+      for (var r=0;r<rankList.length;r++){if(rankList[r].name===myName){myRank=r+1;break;}}
+      var gn = {group1:'一组',group2:'二组',group3:'三组'};
+      html += '<div class="card"><div class="card-title">'+(gn[emp.group]||emp.group)+'组内排名</div>';
+      rankList.forEach(function(p,i){
+        var clr = i===0?'#f59e0b':i===1?'#94a3b8':i===2?'#b45309':'#666';
+        var isMe = p.name === myName;
+        html += '<div class="person-card" style="'+(isMe?'background:#eff6ff;border:1px solid #1a56db':'')+'"'+(isMe?'':' onclick="showPersonProjects(\x27'+p.name.replace(/'/g,'\\x27')+'\x27)')+'><div class="rank" style="color:'+clr+'">'+(i+1)+'</div><div class="person-info"><div class="person-name">'+p.name+(isMe?' (我)':'')+'</div><div class="person-revenue">'+p.revenue+'</div></div></div>';
+      });
+      html += '</div>';
+    }
+    document.getElementById('statsContent').innerHTML = html;
+    document.getElementById('statTabGroup').style.display = 'none';
+    document.getElementById('statTabMonthly').style.display = 'none';
+    document.getElementById('statTabPersonal').classList.add('active');
+    return;
+  }
+  
+  // Admin/Leader: regular group view
+  document.getElementById('statTabGroup').style.display = '';
+  document.getElementById('statTabMonthly').style.display = '';
+  
+  if (userRole === 'leader' && userGroup) {
+    emps = emps.filter(function(e){ return e.group === userGroup; });
+    projects = projects.filter(function(p){ return p.group === userGroup; });
+  }
+  
+  if (statTab === 'group') {
+    var groups = [
+      {key:'group1',name:'一组',color:'#1a56db',revenue:0,projects:0,members:[]},
+      {key:'group2',name:'二组',color:'#047857',revenue:0,projects:0,members:[]},
+      {key:'group3',name:'三组',color:'#b45309',revenue:0,projects:0,members:[]}
+    ];
+    emps.forEach(function(e){
+      var g = groups.find(function(g){return g.key===e.group;});
+      if(g){var pd=perf[e.name]||{total:0};g.members.push({name:e.name,title:e.title,revenue:pd.total||0});g.revenue+=pd.total||0;}
+    });
+    projects.forEach(function(p){var g=groups.find(function(g){return g.key===p.group;});if(g)g.projects++;});
+    groups.forEach(function(g){g.members.sort(function(a,b){return b.revenue-a.revenue;});});
+    groups.sort(function(a,b){return b.revenue-a.revenue;});
+    var html = '';
+    groups.forEach(function(g){
+      html += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:17px;font-weight:700;color:'+g.color+'">'+g.name+'</div><div style="font-size:12px;color:#999">'+g.revenue+' / '+g.projects+'项目 / '+g.members.length+'人</div></div>';
+      g.members.forEach(function(m){
+        html += '<div class="member-row" onclick="showPersonProjects(\''+m.name+'\')"><div class="member-name">'+m.name+'</div><div class="member-title">'+m.title+'</div><div class="member-revenue">'+m.revenue+'</div></div>';
+      });
+      html += '</div>';
+    });
+    document.getElementById('statsContent').innerHTML = html;
+  } else if (statTab === 'monthly') {
+    var md = mkl.map(function(l,i){var t=0;Object.values(perf).forEach(function(v){t+=v[mk[i]]||0;});return {label:l,value:t};});
+    var mx = Math.max.apply(null, md.map(function(m){return m.value;}))||1;
+    var html = '<div class="card"><div class="card-title">月度营收趋势</div><div class="month-grid">';
+    md.forEach(function(m){
+      html += '<div class="month-item'+(m.value>0?' has':'')+'"><div class="month-label">'+m.label+'</div><div class="month-bar" style="height:'+(m.value/mx*120+4)+'px"></div><div class="month-val">'+(m.value>0?Math.round(m.value):'')+'</div></div>';
+    });
+    html += '</div></div>';
+    document.getElementById('statsContent').innerHTML = html;
+  } else {
+    var pl = emps.filter(function(e){return (perf[e.name]||{}).total>0;}).map(function(e){return {name:e.name,title:e.title,revenue:(perf[e.name]||{}).total};}).sort(function(a,b){return b.revenue-a.revenue;});
+    var html = '';
+    pl.forEach(function(p,i){
+      var clr = i===0?'#f59e0b':i===1?'#94a3b8':i===2?'#b45309':'#666';
+      html += '<div class="person-card" onclick="showPersonProjects(\''+p.name+'\')"><div class="rank" style="color:'+clr+'">'+(i+1)+'</div><div class="person-info"><div class="person-name">'+p.name+'</div><div class="person-revenue">'+p.revenue+'</div></div></div>';
+    });
+    document.getElementById('statsContent').innerHTML = html || '<div class="empty">暂无数据</div>';
+  }
+}
+
+function showPersonProjects(name) {
+  document.getElementById('projSearch').value = name;
+  projFilter.keyword = name;
+  projFilter.status = 'all';
+  showPage('proj');
+}
+
+// ===== MEMBERS =====
+var memberGroup = 'all';
+function renderMembers() {
+  var emps = projectData.employees||[];
+  var perf = projectData.performance||{};
+  var projects = projectData.projects||[];
+  var kw = (document.getElementById('memberSearch').value||'').toLowerCase();
+  
+  // Leader: only own group
+  if (userRole === 'leader' && userGroup) {
+    emps = emps.filter(function(e){ return e.group === userGroup; });
+  }
+  
+  var list = emps.map(function(e){
+    var pd = perf[e.name]||{total:0};
+    var projCount = projects.filter(function(p){return p.lead&&p.lead.indexOf(e.name)>=0;}).length;
+    return {name:e.name,title:e.title,group:e.group,phone:e.phone,revenue:pd.total||0,projectCount:projCount};
+  });
+  
+  if (memberGroup!=='all') list=list.filter(function(e){return e.group===memberGroup;});
+  if (kw) list=list.filter(function(e){return e.name.toLowerCase().indexOf(kw)>=0||(e.title||'').toLowerCase().indexOf(kw)>=0;});
+  list.sort(function(a,b){return b.revenue-a.revenue;});
+  
+  var gm={group1:'一组',group2:'二组',group3:'三组'};
+  var leaders = getLeaders();
+  var html='';
+  list.forEach(function(m){
+    var isLdr = leaders.indexOf(m.name) >= 0;
+    var ldrTag = isLdr ? '<span style="font-size:10px;background:#fef3c7;color:#b45309;padding:1px 6px;border-radius:3px;margin-left:4px">组长</span>' : '';
+    var toggleBtn = '';
+    if (isAdmin) {
+      toggleBtn = '<div style="cursor:pointer;padding:4px 10px;border-radius:6px;font-size:11px;border:1px solid '+(isLdr?'#f59e0b':'#e5e7eb')+';color:'+(isLdr?'#f59e0b':'#999')+'" onclick="event.stopPropagation();toggleLeader(\x27'+m.name.replace(/'/g,'\\x27')+'\x27)">'+(isLdr?'取消组长':'设为组长')+'</div>';
+    }
+    html+='<div class="member-card" onclick="showMemberDetail(\x27'+m.name.replace(/'/g,'\\x27')+'\x27)"><div class="member-left"><div class="member-avatar">'+m.name.charAt(0)+'</div></div><div class="member-mid"><div class="m-name">'+m.name+ldrTag+(m.group?'<span class="m-group">'+(gm[m.group]||m.group)+'</span>':'')+'</div><div class="m-title">'+(m.title||'')+'</div></div><div class="member-right">'+toggleBtn+'<div class="m-revenue">'+m.revenue+'</div><div class="m-projects">'+m.projectCount+'个项目</div></div></div>';
+  });
+  document.getElementById('memberList').innerHTML=html||'<div class="empty">暂无匹配人员</div>';
+  
+  // Group filter - leader locked
+  var gh='';
+  if (userRole === 'leader' && userGroup) {
+    gh = '<div class="filter-tag active">全部</div>';
+  } else {
+    ['all','group1','group2','group3'].forEach(function(g){
+      gh+='<div class="filter-tag'+(memberGroup===g?' active':'')+'" onclick="memberGroup=\x27'+g+'\x27;renderMembers()">'+{all:'全部',group1:'一组',group2:'二组',group3:'三组'}[g]+'</div>';
+    });
+  }
+  document.getElementById('memberGroupFilter').innerHTML=gh;
+}
+
+function toggleLeader(name) {
+  var leaders = getLeaders();
+  var idx = leaders.indexOf(name);
+  if (idx >= 0) { leaders.splice(idx, 1); }
+  else { leaders.push(name); }
+  setLeaders(leaders);
+  renderMembers(); // refresh the list
+}
+
+function showMemberDetail(name) {
+  var emps=projectData.employees||[];
+  var perf=projectData.performance||{};
+  var all=projectData.projects||[];
+  var mk=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  var mkl=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  var gm={group1:'一组',group2:'二组',group3:'三组'};
+  
+  var emp=emps.find(function(e){return e.name===name;})||{name:name,title:'',group:'',phone:''};
+  var pd=perf[name]||{total:0};
+  var projs=all.filter(function(p){return p.lead&&p.lead.indexOf(name)>=0;});
+  
+  var monthly=mkl.map(function(label,i){return{label:label,value:pd[mk[i]]||0};});
+  var mmax=Math.max.apply(null,monthly.map(function(m){return m.value;}))||1;
+  
+  var mh='';
+  monthly.forEach(function(m){
+    mh+='<div class="month-item'+(m.value>0?' has':'')+'"><div class="month-label">'+m.label+'</div><div class="month-bar" style="height:'+(m.value/mmax*120+4)+'px"></div><div class="month-val">'+(m.value>0?Math.round(m.value):'')+'</div></div>';
+  });
+  
+  var ph='';
+  projs.sort(function(a,b){return (b.total||0)-(a.total||0);});
+  projs.forEach(function(p){
+    ph+='<div class="info-row" style="cursor:pointer" onclick="showDetail(\x27'+p.id+'\x27)"><div style="font-size:13px;flex:1">'+p.name+'</div><div style="font-size:14px;font-weight:700;color:#1a56db">'+p.total+'</div></div>';
+  });
+  
+  document.getElementById('memberDetailTitle').innerHTML=name+' · 详情';
+  document.getElementById('memberDetailContent').innerHTML=
+    '<div class="info-card"><div class="section-title">基本信息</div>'+
+    '<div class="info-row"><div class="label">姓名</div><div class="value">'+name+'</div></div>'+
+    '<div class="info-row"><div class="label">职称</div><div class="value">'+(emp.title||'未设置')+'</div></div>'+
+    '<div class="info-row"><div class="label">所属组</div><div class="value">'+(gm[emp.group]||'未分组')+'</div></div>'+
+    (emp.phone?'<div class="info-row"><div class="label">手机</div><div class="value">'+emp.phone+'</div></div>':'')+
+    '<div class="info-row"><div class="label">年度业绩</div><div class="value blue">'+(pd.total||0)+'</div></div></div>'+
+    '<div class="info-card"><div class="section-title">月度业绩</div><div class="month-grid">'+mh+'</div></div>'+
+    '<div class="info-card"><div class="section-title">关联项目 ('+projs.length+')</div>'+ph+(projs.length===0?'<div class="empty">暂无关连项目</div>':'')+'</div>';
+  
+  showPage('memberDetail');
+}
+
+// ===== ADMIN =====
+function renderAdmin() {
+  var pending=JSON.parse(localStorage.getItem('eval_pending')||'[]');
+  var ps=projectData.projects||[];
+  var es=projectData.employees||[];
+  var ss=projectData.stats||{};
+  document.getElementById('adminStats').innerHTML='<div class="money-item"><div class="money-label">项目</div><div class="money-value">'+ps.length+'</div></div><div class="money-item"><div class="money-label">营收</div><div class="money-value">'+(ss.totalRevenue||0)+'</div></div><div class="money-item"><div class="money-label">员工</div><div class="money-value">'+es.length+'</div></div>';
+  document.getElementById('adminPending').innerHTML=pending.length>0?'<div class="desc warn">本地有 '+pending.length+' 条未同步的修改</div>':'';
+  
+  var backups=JSON.parse(localStorage.getItem('dataBackups')||'[]').slice(-5);
+  var bh='';
+  backups.forEach(function(b,i){
+    bh+='<div class="info-row" style="cursor:pointer" onclick="adminRestore('+i+')"><div class="label">备份 '+(i+1)+'</div><div class="value" style="font-size:12px">'+(b.time||'')+' → 恢复</div></div>';
+  });
+  document.getElementById('adminBackups').innerHTML=bh?'<div class="card"><div class="card-title">自动备份</div>'+bh+'</div>':'<div class="card"><div class="card-title">自动备份</div><div class="empty">暂无备份</div></div>';
+}
+
+function adminExportAll() {
+  var pending=JSON.parse(localStorage.getItem('eval_pending')||'[]');
+  var data={projects:[...(projectData.projects||[]),...pending],employees:projectData.employees,performance:projectData.performance,stats:projectData.stats,exportTime:new Date().toISOString()};
+  navigator.clipboard.writeText(JSON.stringify(data,null,2)).then(function(){alert('已复制全部数据到剪贴板！粘贴到PC用merge_back.py导入Excel');});
+}
+
+function adminExportPending() {
+  var pending=JSON.parse(localStorage.getItem('eval_pending')||'[]');
+  if(!pending.length){alert('无新增项目');return;}
+  navigator.clipboard.writeText(JSON.stringify(pending,null,2)).then(function(){alert('已复制'+pending.length+'条新增数据');});
+}
+
+function adminShowImport() {
+  var el=document.getElementById('adminImportArea');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function adminConfirmImport() {
+  var text=document.getElementById('adminImportText').value.trim();
+  if(!text){alert('请粘贴JSON数据');return;}
+  try{
+    var data=JSON.parse(text);
+    if(!data.projects){alert('JSON格式错误:缺少projects字段');return;}
+    if(!confirm('将导入'+data.projects.length+'个项目。当前新增数据会自动备份。继续？'))return;
+    
+    var pending=JSON.parse(localStorage.getItem('eval_pending')||'[]');
+    var current={projects:projectData.projects||[],pending:pending,time:new Date().toISOString()};
+    var backups=JSON.parse(localStorage.getItem('dataBackups')||'[]');
+    backups.push(current);
+    if(backups.length>10)backups=backups.slice(-10);
+    localStorage.setItem('dataBackups',JSON.stringify(backups));
+    localStorage.setItem('eval_pending',JSON.stringify(data.projects||[]));
+    alert('导入成功！');
+    document.getElementById('adminImportArea').style.display='none';
+    document.getElementById('adminImportText').value='';
+    renderAdmin();
+  }catch(e){alert('JSON解析失败:'+e.message);}
+}
+
+function adminRestore(idx) {
+  var backups=JSON.parse(localStorage.getItem('dataBackups')||'[]');
+  var bk=backups[idx];
+  if(!bk)return;
+  if(confirm('恢复到'+bk.time+'的备份？当前新增数据将丢失。')){
+    localStorage.setItem('eval_pending',JSON.stringify(bk.pending||[]));
+    alert('已恢复');
+    renderAdmin();
+  }
+}
+
+function adminClearAll() {
+  if(confirm('⚠️ 将清除所有新增和编辑的项目。不会影响Excel原始数据。确认？')){
+    localStorage.removeItem('eval_pending');
+    localStorage.removeItem('dataBackups');
+    alert('已清除');
+    renderAdmin();
+  }
+}
+
+// ===== PWA =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>
