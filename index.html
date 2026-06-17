@@ -272,6 +272,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div class="card" id="adminBackups"></div>
   <div class="card">
+    <div class="card-title">☁️ 发布到云端</div>
+    <div class="desc">改完数据点一下，所有设备自动同步（需GitHub Token，只配一次）</div>
+    <div id="publishSetup" style="display:none">
+      <input class="form-input" id="ghToken" type="password" placeholder="粘贴 GitHub Token" style="margin-bottom:8px">
+      <button class="submit-btn" onclick="saveToken()">保存 Token</button>
+    </div>
+    <button class="export-btn" id="publishBtn" onclick="publishToCloud()" style="background:#047857">🚀 发布到云端</button>
+    <div id="publishStatus" style="font-size:12px;color:#999;margin-top:8px"></div>
+  </div>
+  <div class="card">
     <div class="card-title">重置</div>
     <div class="desc">清除所有本地修改，恢复Excel原始数据</div>
     <button class="export-btn danger" onclick="adminClearAll()">清除本地数据</button>
@@ -1046,6 +1056,101 @@ function adminClearAll() {
     alert('已清除');
     renderAdmin();
   }
+}
+
+// ===== 发布到云端 (GitHub Pages) =====
+var GITHUB_OWNER = 'lth412996569-collab';
+var GITHUB_REPO = 'eval-project';
+var GITHUB_FILE = 'data.js';
+
+function getToken() {
+  return localStorage.getItem('eval_gh_token') || '';
+}
+
+function saveToken() {
+  var t = document.getElementById('ghToken').value.trim();
+  if (!t) { alert('请粘贴 Token'); return; }
+  localStorage.setItem('eval_gh_token', t);
+  document.getElementById('ghToken').value = '';
+  document.getElementById('publishSetup').style.display = 'none';
+  document.getElementById('publishBtn').style.background = '#047857';
+  alert('Token 已保存');
+}
+
+function publishToCloud() {
+  var token = getToken();
+  if (!token) {
+    document.getElementById('publishSetup').style.display = 'block';
+    document.getElementById('ghToken').focus();
+    return;
+  }
+  
+  var status = document.getElementById('publishStatus');
+  status.innerHTML = '⏳ 正在生成数据...';
+  
+  // 合并全部数据
+  var pending = JSON.parse(localStorage.getItem('eval_pending') || '[]');
+  var allProjects = (projectData.projects || []).concat(pending);
+  var newData = {
+    projects: allProjects,
+    employees: projectData.employees || [],
+    performance: projectData.performance || {},
+    stats: projectData.stats || {},
+    monthlyRevenue: projectData.monthlyRevenue || {},
+    updatedAt: new Date().toISOString()
+  };
+  
+  var content = '// 评估部项目数据 - 自动同步\nvar EMBEDDED_DATA = ' + JSON.stringify(newData) + ';';
+  
+  // 先获取当前文件的 SHA
+  status.innerHTML = '⏳ 连接 GitHub...';
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + GITHUB_FILE, true);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+  xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+  xhr.onload = function() {
+    var sha = '';
+    if (xhr.status === 200) {
+      try { sha = JSON.parse(xhr.responseText).sha; } catch(e) {}
+    }
+    
+    // 提交更新
+    status.innerHTML = '⏳ 上传中...';
+    var body = JSON.stringify({
+      message: 'update data ' + new Date().toLocaleString('zh-CN'),
+      content: btoa(unescape(encodeURIComponent(content))),
+      sha: sha || undefined
+    });
+    
+    var putXhr = new XMLHttpRequest();
+    putXhr.open('PUT', 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + GITHUB_FILE, true);
+    putXhr.setRequestHeader('Authorization', 'Bearer ' + token);
+    putXhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    putXhr.setRequestHeader('Content-Type', 'application/json');
+    putXhr.onload = function() {
+      if (putXhr.status === 200 || putXhr.status === 201) {
+        status.innerHTML = '✅ 已发布！30秒后所有设备自动更新';
+        setTimeout(function() { status.innerHTML = '✅ 上次发布: ' + new Date().toLocaleString('zh-CN'); }, 5000);
+      } else {
+        try {
+          var err = JSON.parse(putXhr.responseText);
+          status.innerHTML = '❌ 发布失败: ' + (err.message || '请检查 Token');
+        } catch(e) {
+          status.innerHTML = '❌ 发布失败 (HTTP ' + putXhr.status + ')';
+        }
+        // Token may be invalid
+        if (putXhr.status === 401) {
+          localStorage.removeItem('eval_gh_token');
+          document.getElementById('publishSetup').style.display = 'block';
+        }
+      }
+    };
+    putXhr.send(body);
+  };
+  xhr.onerror = function() {
+    status.innerHTML = '❌ 网络错误，请重试';
+  };
+  xhr.send();
 }
 
 // ===== PWA =====
